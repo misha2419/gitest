@@ -1,0 +1,47 @@
+// =========================================================
+// 查詢台灣銀行牌告匯率
+// =========================================================
+if ($message['text'] == "今日匯率" || $message['text'] == "匯率" || $message['text'] == "查看匯率"){
+
+    $msg = "台灣銀行牌告匯率";
+
+    $url = "https://rate.bot.com.tw/xrt";
+    $page = file_get_contents($url);
+
+    if ($page) {
+
+        $dom = new DOMDocument();
+        $dom -> loadHTML($page);
+        // $dom -> loadHTML(mb_convert_encoding($page, 'HTML-ENTITIES', 'UTF-8'));
+
+        $date = $dom->getElementById('h1_small_id');
+        $msg .= "\n".$date->textContent;
+
+        // 用 tag 名稱擷取
+        $tbs = $dom->getElementsByTagName('tbody');
+        $trs = $tbs[0]->getElementsByTagName('tr');
+        foreach ($trs as $tr) {
+            // 取得標題文字
+            $tds = $tr -> getElementsByTagName('td');
+            $msg .= "\n";
+            $msg .= trim($tds[0]->childNodes[1]->childNodes[6]->textContent)."\t";
+            $msg .= $tds[1]->textContent."\t";
+            $msg .= $tds[2]->textContent;
+        }
+
+    } else {
+        $msg .=  "\n暫時無法取得網頁";
+    }
+
+    $msg .= "\n\n資料來源：".$url;
+
+    $client->replyMessage(array(
+        'replyToken' => $event['replyToken'],
+        'messages' => array(
+            array(
+                'type' => 'text', // 訊息類型 (文字)
+                'text' => $msg   // 回復訊息
+            )
+        )
+    ));
+}
